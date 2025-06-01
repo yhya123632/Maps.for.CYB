@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تتبع رقم</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+      color: #00ff00;
+      background: black;
+      overflow-x: hidden;
+    }
+    .matrix-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .overlay, .login-box {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      padding: 10px;
+      color: #00ff00;
+      direction: rtl;
+      text-align: right;
+      font-size: 13px;
+    }
+    .title {
+      font-size: 18px;
+      color: #00bfff;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    #map {
+      height: 350px;
+      width: 90%;
+      margin: 0 auto;
+      z-index: 5;
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 10px red;
+    }
+    .notice, .update-status {
+      text-align: center;
+      color: red;
+      margin-top: 10px;
+      font-weight: bold;
+      font-size: 12px;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px;
+    }
+    .btn {
+      padding: 6px 15px;
+      background: #222;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .btn:hover {
+      background: #00ff00;
+      color: black;
+    }
+    .circle-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: red;
+      border: 2px solid #000;
+      cursor: pointer;
+      margin: 10px auto;
+    }
+    .ip-box {
+      text-align: center;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    input[type="text"] {
+      background: black;
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      padding: 5px;
+      width: 200px;
+      text-align: center;
+      display: block;
+      margin: 10px auto;
+    }
+    #login-container {
+      display: block;
+      text-align: center;
+      padding-top: 80px;
+    }
+    #main-content {
+      display: none;
+    }
+    .error-msg {
+      color: red;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+<canvas class="matrix-bg"></canvas>
+
+<div id="login-container" class="login-box">
+  <div class="title">أدخل رمز الدخول</div>
+  <input type="text" id="access-code" placeholder="أدخل الرمز">
+  <button class="btn" onclick="checkCode()">دخول</button>
+  <div class="error-msg" id="error-msg"></div>
+</div>
+
+<div id="main-content" class="overlay">
+  <div class="title">تتبع المنفذ (PORT)</div>
+  <input type="text" id="phone" placeholder="أدخل رقم الهاتف">
+  <div class="controls">
+    <button class="btn" onclick="showFahil()">موافق</button>
+    <button class="btn" onclick="showShin()">تعديل</button>
+  </div>
+  <div class="circle-btn" onclick="showHoms()" title="عرض حمص"></div>
+  <div id="map"></div>
+  <div class="ip-box" id="ip-box">IP: </div>
+  <div class="notice">لا يوجد موقع دقيق للرقم، يرجى تحديث البيانات.</div>
+  <button class="btn" onclick="updateData()">تحديث البيانات</button>
+  <div id="update-status" class="update-status"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+  // تحقق من الرمز
+  function checkCode() {
+    const code = document.getElementById("access-code").value.trim();
+    const correctCode = "yhyawswf";
+    const errorBox = document.getElementById("error-msg");
+    if (code === correctCode) {
+      document.getElementById("login-container").style.display = "none";
+      document.getElementById("main-content").style.display = "block";
+    } else {
+      errorBox.textContent = "رمز غير صحيح!";
+    }
+  }
+
+  const map = L.map('map', { zoomControl: false }).setView([35.2200, 36.6000], 11);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: ''
+  }).addTo(map);
+
+  let fahilCircle, shinCircle, homsCircle;
+
+  function showFahil() {
+    clearMap();
+    fahilCircle = L.circle([35.2200, 36.6000], {
+      radius: 1200,
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 0.2,
+      dashArray: '5,5'
+    }).addTo(map);
+    map.setView([35.2200, 36.6000], 13);
+    displayIP();
+  }
+
+  function showShin() {
+    clearMap();
+    shinCircle = L.circle([35.2150, 36.5500], {
+      radius: 1200,
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 0.2,
+      dashArray: '5,5'
+    }).addTo(map);
+    map.setView([35.2150, 36.5500], 13);
+    displayIP();
+  }
+
+  function showHoms() {
+    clearMap();
+    homsCircle = L.circle([34.7300, 36.7200], {
+      radius: 2000,
+      color: 'red',
+      fillColor: 'red',
+      fillOpacity: 0.2
+    }).addTo(map);
+    map.setView([34.7300, 36.7200], 12);
+    displayIP();
+  }
+
+  function clearMap() {
+    if (fahilCircle) map.removeLayer(fahilCircle);
+    if (shinCircle) map.removeLayer(shinCircle);
+    if (homsCircle) map.removeLayer(homsCircle);
+  }
+
+  function updateData() {
+    const status = document.getElementById("update-status");
+    status.textContent = "جارٍ التحقق من بيانات الاتصال...";
+    setTimeout(() => {
+      status.textContent = "فشل التحقق من المعلومات.";
+    }, 2000);
+  }
+
+  function displayIP() {
+    const phone = document.getElementById("phone").value.trim();
+    let ip = generateFakeIP(phone);
+    document.getElementById("ip-box").textContent = "IP: " + ip;
+  }
+
+  const ipCache = {};
+  function generateFakeIP(phone) {
+    if (ipCache[phone]) return ipCache[phone];
+    const ip = `192.168.${Math.floor(Math.random()*255)}.${Math.floor(Math.random()*255)}`;
+    ipCache[phone] = ip;
+    return ip;
+  }
+</script>
+
+<script>
+  // خلفية Matrix
+  const canvas = document.querySelector('.matrix-bg');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const cols = Math.floor(canvas.width / 20);
+  const ypos = Array(cols).fill(0);
+  function matrix() {
+    ctx.fillStyle = '#0001';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#0f0';
+    ctx.font = '13pt monospace';
+    ypos.forEach((y, ind) => {
+      const text = String.fromCharCode(0x30A0 + Math.random() * 96);
+      const x = ind * 20;
+      ctx.fillText(text, x, y);
+      if (y > canvas.height + Math.random() * 10000) ypos[ind] = 0;
+      else ypos[ind] = y + 20;
+    });
+    requestAnimationFrame(matrix);
+  }
+  matrix();
+</script>
+</body>
+</html>
